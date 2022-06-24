@@ -1,0 +1,6 @@
+[submodule "third_part/commanddotnet"]
+	path = third_party/commanddotnet
+	url = https://github.com/AntonC9018/commanddotnet
+[submodule "third_party/commandline"]
+	path = third_party/commandline
+	url = https://github.com/AntonC9018/commandline
