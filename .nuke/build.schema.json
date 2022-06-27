@@ -71,9 +71,12 @@
           "items": {
             "type": "string",
             "enum": [
+              "BuildPackConverter",
+              "BuildTestThingy",
               "Clean",
               "Compile",
-              "Pack",
+              "NukeGeneratedCodePack",
+              "PackConverter",
               "Restore"
             ]
           }
@@ -88,9 +91,12 @@
           "items": {
             "type": "string",
             "enum": [
+              "BuildPackConverter",
+              "BuildTestThingy",
               "Clean",
               "Compile",
-              "Pack",
+              "NukeGeneratedCodePack",
+              "PackConverter",
               "Restore"
             ]
           }

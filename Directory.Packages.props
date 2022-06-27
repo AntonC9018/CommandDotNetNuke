@@ -1,0 +1,19 @@
+<Project>
+    <PropertyGroup>
+        <NukeVersion>6.1.1</NukeVersion>
+        <RoslynVersion>4.3.0-2.final</RoslynVersion>
+
+        <RestoreSources>
+            https://api.nuget.org/v3/index.json
+        </RestoreSources>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <PackageVersion Include="CommandDotNet" Version="6.0.5" />
+        <PackageVersion Include="Nuke.CodeGeneration" Version="$(NukeVersion)" />
+        <PackageVersion Include="Nuke.Common" Version="$(NukeVersion)" />
+        <PackageVersion Include="Humanizer" Version="2.14.1" />
+        <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="$(RoslynVersion)" />
+        <!--    <ProjectReference Include="$(SolutionDir)third_party/commanddotnet/CommandDotNet/CommandDotNet.csproj" Version="6.1.0-alpha.repl" />-->
+    </ItemGroup>
+</Project>

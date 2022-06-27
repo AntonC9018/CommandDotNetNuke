@@ -2,7 +2,10 @@
 using System.Reflection;
 using CommandDotNet;
 using CommandDotNet.Builders;
+
+#if COMPILE_WITH_NUKE_DESCRIBE
 using CommandDotNetNuke.Converter;
+#endif
 
 namespace CommandDotNetNuke.Test;
 
@@ -10,20 +13,24 @@ public class DependencyResolver : IDependencyResolver
 {
     public object Resolve(Type type)
     {
-        if (type == typeof(NukeDescribeCommand))
-        {
-            return new NukeDescribeCommand(new ()
+        #if COMPILE_WITH_NUKE_DESCRIBE
+            if (type == typeof(NukeDescribeCommand))
             {
-                ShouldRemoveThisTask = false,
-                ToolName = "Hello",
-                Help = "Hello",
-                Namespace = "Hello",
-                OfficialURL = "url",
-                OutputJsonPath = "test.json",
-                OutputCSharpPath = "test.cs",
-                PackageID = "id",
-            });
-        }
+                return new NukeDescribeCommand(new ()
+                {
+                    ShouldRemoveThisTask = false,
+                    ToolName = "Hello",
+                    Help = "Hello",
+                    Namespace = "Hello",
+                    OfficialURL = "url",
+                    OutputJsonPath = "test.json",
+                    OutputCSharpPath = "test.cs",
+                    // PackageID = "id",
+                    PackageExecutablePath = "hello",
+                    PackageExecutableName = "hello",
+                });
+            }
+        #endif
 
         return Activator.CreateInstance(type);
     }
@@ -63,20 +70,22 @@ public class OtherCommands
     }
 
     [Command("thing", Description = "does stuff")]
-    public static void Execute(Arguments arguments)
+    public void Execute(Arguments arguments)
     {
         Console.WriteLine($"Was given a={arguments.a}, b={arguments.b}, e={arguments.e}");
     }
-    
-    [Subcommand]
-    public NukeDescribeCommand NukeDescribe { get; set; }
+
+    #if COMPILE_WITH_NUKE_DESCRIBE
+        [Subcommand]
+        public NukeDescribeCommand NukeDescribe { get; set; }
+    #endif
 }
 
 public class Program
 {
     public static int Main(string[] args)
     {
-        var app = new AppRunner<NukeDescribeCommand>();
+        var app = new AppRunner<OtherCommands>();
         app.UseDependencyResolver(new DependencyResolver());
         return app.Run(args);
     }

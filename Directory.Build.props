@@ -1,7 +1,12 @@
 <Project>
     <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+
         <ProjectRootDirectory Condition="'$(RootDirectory)'!=''">$(RootDirectory)</ProjectRootDirectory>
         <ProjectRootDirectory Condition="'$(RootDirectory)'==''">$(SolutionDir)</ProjectRootDirectory>
         <ProjectRootDirectory Condition="!HasTrailingSlash('$(ProjectRootDirectory)')">$(ProjectRootDirectory)\</ProjectRootDirectory>
+
+        <!-- https://docs.microsoft.com/en-us/nuget/consume-packages/central-package-management -->
+        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     </PropertyGroup>
 </Project>

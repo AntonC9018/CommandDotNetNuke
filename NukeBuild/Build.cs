@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using Nuke.Common;
 using Nuke.Common.CI;
@@ -25,13 +26,13 @@ class Build : NukeBuild
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
 
     [Solution] readonly Solution Solution;
-    // [GitRepository] readonly GitRepository GitRepository;
-    // [GitVersion] readonly GitVersion GitVersion;
+    [GitRepository] readonly GitRepository GitRepository;
+    [GitVersion] readonly GitVersion GitVersion;
 
-    AbsolutePath SourceDirectory => RootDirectory / "source";
-    AbsolutePath ThirdPartyDirectory => RootDirectory / "third_party";
-    AbsolutePath TestsDirectory => RootDirectory / "tests";
-    AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
+    readonly AbsolutePath SourceDirectory = RootDirectory / "source";
+    readonly AbsolutePath ThirdPartyDirectory = RootDirectory / "third_party";
+    readonly AbsolutePath TestsDirectory = RootDirectory / "tests";
+    readonly AbsolutePath ArtifactsDirectory = RootDirectory / "artifacts";
 
     Target Clean => _ => _
         .Before(Restore)
@@ -49,14 +50,13 @@ class Build : NukeBuild
         .Executes(() =>
         {
             DotNetRestore(s => s
-                .SetProperty("RootDirectory", RootDirectory)
                 .SetProjectFile(Solution));
         });
 
     DotNetBuildSettings ConfigureVersioning(DotNetBuildSettings s) => s
-        // .SetAssemblyVersion(GitVersion.AssemblySemVer)
-        // .SetFileVersion(GitVersion.AssemblySemFileVer)
-        // .SetInformationalVersion(GitVersion.InformationalVersion)
+        .SetAssemblyVersion(GitVersion.AssemblySemVer)
+        .SetFileVersion(GitVersion.AssemblySemFileVer)
+        .SetInformationalVersion(GitVersion.InformationalVersion)
         ;
 
     Target Compile => _ => _
@@ -72,28 +72,82 @@ class Build : NukeBuild
             });
         });
 
-    Target Pack => _ => _
+    Project GetConverterProject()
+    {
+        var project = Solution.GetProject("CommandDotNetNuke.Converter");
+        Assert.NotNull(project);
+        return project;
+    }
+
+    Target BuildPackConverter => _ => _
         .DependsOn(Restore)
         .Executes(() =>
         {
-            var project = Solution.GetProject("CommandDotNetNuke.Converter");
-            Assert.NotNull(project);
-
             DotNetBuild(s =>
             {
                 s = ConfigureVersioning(s);
-                s = s.SetConfiguration(Configuration.Release);
-                s = s.EnableNoRestore();
-                s = s.SetProjectFile(project.Path);
-                s = s.SetProperty("RootDirectory", RootDirectory);
-                return s;
+                return s
+                    .SetConfiguration(Configuration.Release)
+                    .EnableNoRestore()
+                    .SetProjectFile(GetConverterProject().Path);
             });
-            
+        });
+
+    Target PackConverter => _ => _
+        .DependsOn(BuildPackConverter)
+        .Executes(() =>
+        {
             DotNetPack(s => s
-                .SetProperty("RootDirectory", RootDirectory)
-                .SetProject(project.Path)
+                .SetProject(GetConverterProject().Path)
                 .SetConfiguration(Configuration.Release)
                 .EnableNoBuild()
                 .EnableNoRestore());
+        });
+
+    Target BuildTestThingy => _ => _
+        .DependsOn(Restore)
+        .Executes(() =>
+        {
+            DotNetBuild(s => s
+                .SetProjectFile(Solution.GetProject("CommandDotNetNuke.Test"))
+                .SetProperty("COMPILE_WITH_NUKE_DESCRIBE", "true")
+                .SetConfiguration(Configuration)
+                // .EnableNoRestore()
+                );
+        });
+
+    Target NukeGeneratedCodePack => _ => _
+        .DependsOn(BuildPackConverter)
+        .DependsOn(BuildTestThingy)
+        .Executes(() =>
+        {
+            // if (!TempDirectory.DirectoryExists())
+            //     Directory.CreateDirectory(TempDirectory);
+            
+            // var thingDir = (TempDirectory / "thing");
+            // if (thingDir.DirectoryExists())
+            //     Directory.Delete(thingDir, recursive: true);
+            // Directory.CreateDirectory(thingDir);
+
+            // const string thingProjectName = "project.csproj";
+            // var projectThing = thingDir / thingProjectName;
+
+            // var projectTemplatePath = SourceDirectory / "NukeGeneratedCodePackageTemplate" / "PackageTemplate.csproj";
+            // File.Copy(projectTemplatePath, projectThing);
+            
+            var customCodeProject = Solution.GetProject("NukeGeneratedCode");
+            Assert.NotNull(customCodeProject);
+
+            DotNetRun(s => s
+                .SetProjectFile(Solution.GetProject("CommandDotNetNuke.Test"))
+                .SetConfiguration(Configuration)
+                .SetProcessWorkingDirectory(customCodeProject.Directory)
+                .SetApplicationArguments("nuke-describe")
+                .EnableNoRestore()
+                .EnableNoBuild());
+
+            DotNetBuild(s => s
+                .SetProjectFile(customCodeProject)
+                .SetConfiguration(Configuration));
         });
 }

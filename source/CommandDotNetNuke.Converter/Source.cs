@@ -13,6 +13,7 @@ namespace CommandDotNetNuke.Converter;
 using NukeTool = Tool;
 using NukeTask = Task;
 
+[Command("nuke-describe", Description = "Writes nuke json and generated code for this app.")]
 public sealed class NukeDescribeCommand
 {
     public sealed class Configuration
@@ -25,6 +26,8 @@ public sealed class NukeDescribeCommand
         public string OutputJsonPath;
         public string OutputCSharpPath;
         public string PackageID;
+        public string PackageExecutablePath;
+        public string PackageExecutableName;
     }
 
     private readonly Configuration _configuration;
@@ -34,7 +37,7 @@ public sealed class NukeDescribeCommand
         _configuration = configuration;
     }
 
-    [Command("nuke-describe", Description = "Writes nuke json and generated code for this app.")]
+    [DefaultCommand]
     public void Execute(CommandContext commandContext)
     {
         var tool = ConvertionHelper.ConvertToTool(commandContext);
@@ -49,9 +52,23 @@ public sealed class NukeDescribeCommand
         tool.Name = _configuration.ToolName;
         tool.OfficialUrl = _configuration.OfficialURL;
         tool.PackageId = _configuration.PackageID;
-        tool.CustomExecutable = true;
         tool.Help = _configuration.Help;
         tool.Namespace = _configuration.Namespace;
+
+        bool hasExplicitPackageExecutablePath = _configuration.PackageExecutablePath is not null
+            || _configuration.PackageID is not null;
+        tool.CustomExecutable = !hasExplicitPackageExecutablePath;
+        if (hasExplicitPackageExecutablePath)
+        {
+            Debug.Assert(_configuration.PackageExecutablePath is not null 
+                != _configuration.PackageID is not null,
+                "Only one of PackageID or PackageExecutablePath should be set at once.");
+            
+            tool.PathExecutable = _configuration.PackageExecutablePath;
+            tool.PackageId = _configuration.PackageID;
+        }
+        
+        tool.PackageExecutable = _configuration.PackageExecutableName;
         
         if (_configuration.OutputJsonPath is not null)
             ToolSerializer.Save(tool, _configuration.OutputJsonPath);
@@ -99,6 +116,66 @@ public static class ConvertionHelper
     {
     }
 
+    public struct TypeInfoThing
+    {
+        public string Text;
+        public bool IsArray;
+
+        public TypeInfoThing(string text, bool isArray)
+        {
+            Text = text;
+            IsArray = isArray;
+        }
+    }
+
+                
+    static string GetTypeTextSimple(Type type)
+    {
+        if (type == typeof(float))
+            return "float";
+        if (type == typeof(double))
+            return "double";
+        if (type == typeof(byte))
+            return "byte";
+        if (type == typeof(sbyte))
+            return "sbyte";
+        if (type == typeof(short))
+            return "short";
+        if (type == typeof(ushort))
+            return "ushort";
+        if (type == typeof(int))
+            return "int";
+        if (type == typeof(uint))
+            return "uint";
+        if (type == typeof(long))
+            return "long";
+        if (type == typeof(ulong))
+            return "ulong";
+        if (type == typeof(char))
+            return "char";
+        // if (type == typeof(string))
+        //     return "string";
+        if (type == typeof(bool))
+            return "bool";
+        if (type.IsEnum)
+            return type.Name;
+        return "string";
+    }
+
+    static TypeInfoThing GetTypeInfoThing(Type type)
+    {
+        if (type.IsGenericType)
+        {
+            if (type.GetGenericTypeDefinition() == typeof(List<>))
+                return new($"List<{GetTypeTextSimple(type.GenericTypeArguments[0])}>", isArray: true);
+            if (type.GetGenericTypeDefinition() == typeof(HashSet<>))
+                return new($"HashSet<{GetTypeTextSimple(type.GenericTypeArguments[0])}>", isArray: true);
+        }
+        if (type.IsArray)
+            return new($"{GetTypeTextSimple(type.GetElementType())}[]", isArray: true);
+        return new(GetTypeTextSimple(type), isArray: false);
+    }
+
     private static readonly StringBuilder _StringBuilderCached = new();
     public static string ToPascalCase(ReadOnlySpan<char> input)
     {
@@ -109,7 +186,7 @@ public static class ConvertionHelper
         {
             char ch = input[i];
             i++;
-
+    
             if (ch >= 'a' && ch <= 'z')
                 _StringBuilderCached.Append((char)(ch + 'A' - 'a'));
             else
@@ -137,7 +214,7 @@ public static class ConvertionHelper
                 _StringBuilderCached.Append(ch);
             }
         }
-
+    
         {
             var result = _StringBuilderCached.ToString();
             _StringBuilderCached.Clear();
@@ -222,58 +299,17 @@ public static class ConvertionHelper
                         return ToPascalCase(a);
                     }
                     nukeProp.Name = GetName(arg);
-                    nukeProp.Type = GetTypeText(arg.TypeInfo.Type);
-                    // Can't get this info from runtime argument.
-                    nukeProp.Separator = ',';
-        
-                    // Console.WriteLine();
-                }
-                
-                static string GetTypeTextSimple(Type type)
-                {
-                    if (type == typeof(float))
-                        return "float";
-                    if (type == typeof(double))
-                        return "double";
-                    if (type == typeof(byte))
-                        return "byte";
-                    if (type == typeof(sbyte))
-                        return "sbyte";
-                    if (type == typeof(short))
-                        return "short";
-                    if (type == typeof(ushort))
-                        return "ushort";
-                    if (type == typeof(int))
-                        return "int";
-                    if (type == typeof(uint))
-                        return "uint";
-                    if (type == typeof(long))
-                        return "long";
-                    if (type == typeof(ulong))
-                        return "ulong";
-                    if (type == typeof(char))
-                        return "char";
-                    // if (type == typeof(string))
-                    //     return "string";
-                    if (type == typeof(bool))
-                        return "bool";
-                    if (type.IsEnum)
-                        return type.Name;
-                    return "string";
-                }
-    
-                static string GetTypeText(Type type)
-                {
-                    if (type.IsGenericType)
+
                     {
-                        if (type.GetGenericTypeDefinition() == typeof(List<>))
-                            return $"List<{GetTypeTextSimple(type.GenericTypeArguments[0])}>";
-                        if (type.GetGenericTypeDefinition() == typeof(HashSet<>))
-                            return $"HashSet<{GetTypeTextSimple(type.GenericTypeArguments[0])}>";
+
+                        var typeInfoThing = GetTypeInfoThing(arg.TypeInfo.Type);
+                        nukeProp.Type = typeInfoThing.Text;
+                        // Can't get this info from runtime argument.
+                        if (typeInfoThing.IsArray)
+                            nukeProp.Separator = ',';
                     }
-                    if (type.IsArray)
-                        return $"{GetTypeTextSimple(type.GetElementType())}[]";
-                    return GetTypeTextSimple(type);
+
+                    // Console.WriteLine();
                 }
             }
         }

@@ -1,7 +1,0 @@
-<Project>
-  <ItemGroup>
-<!--    <ProjectReference Include="$(SolutionDir)third_party/commanddotnet/CommandDotNet/CommandDotNet.csproj" Version="6.1.0-alpha.repl" />-->
-    <PackageReference Include="CommandDotNet" Version="6.1.0-alpha.repl" />
-    <PackageReference Include="Nuke.CodeGeneration" Version="6.1.1" />
-  </ItemGroup>
-</Project>
