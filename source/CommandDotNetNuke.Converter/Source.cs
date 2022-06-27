@@ -68,7 +68,7 @@ public sealed class NukeDescribeCommand
         if (hasExplicitPackageExecutablePath)
         {
             if (_configuration.PackageExecutablePath is not null 
-                != _configuration.PackageID is not null)
+                == _configuration.PackageID is not null)
             {
                 // I can't log an error here, and cannot assert because we want this error in release
                 // so I have to throw.
