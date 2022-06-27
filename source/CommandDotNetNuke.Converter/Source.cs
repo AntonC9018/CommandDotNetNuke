@@ -30,6 +30,13 @@ public sealed class NukeDescribeCommand
         public string PackageExecutableName;
     }
 
+    public class Exception : System.Exception
+    {
+        public Exception(string message) : base(message)
+        {
+        }
+    }
+
     private readonly Configuration _configuration;
 
     public NukeDescribeCommand(Configuration configuration)
@@ -60,9 +67,13 @@ public sealed class NukeDescribeCommand
         tool.CustomExecutable = !hasExplicitPackageExecutablePath;
         if (hasExplicitPackageExecutablePath)
         {
-            Debug.Assert(_configuration.PackageExecutablePath is not null 
-                != _configuration.PackageID is not null,
-                "Only one of PackageID or PackageExecutablePath should be set at once.");
+            if (_configuration.PackageExecutablePath is not null 
+                != _configuration.PackageID is not null)
+            {
+                // I can't log an error here, and cannot assert because we want this error in release
+                // so I have to throw.
+                throw new Exception("Only one of PackageID or PackageExecutablePath should be set at once.");
+            }
             
             tool.PathExecutable = _configuration.PackageExecutablePath;
             tool.PackageId = _configuration.PackageID;
