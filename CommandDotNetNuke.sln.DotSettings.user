@@ -1,0 +1,7 @@
+﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+	<s:String x:Key="/Default/Environment/AssemblyExplorer/XmlDocument/@EntryValue">&lt;AssemblyExplorer&gt;&#xD;
+  &lt;Assembly Path="C:\Users\Anton\.nuget\packages\commanddotnet\6.1.0-alpha.repl\lib\net5.0\CommandDotNet.dll" /&gt;&#xD;
+  &lt;Assembly Path="C:\Users\Anton\.nuget\packages\nuke.common\6.1.1\lib\netcoreapp2.1\Nuke.Common.dll" /&gt;&#xD;
+  &lt;Assembly Path="C:\Users\Anton\.nuget\packages\nuke.codegeneration\6.1.1\lib\netcoreapp2.1\Nuke.CodeGeneration.dll" /&gt;&#xD;
+  &lt;Assembly Path="C:\Users\Anton\.nuget\packages\nuke.generation.specifications\0.1.0-alpha0019\lib\netstandard2.0\Nuke.Generation.Specifications.dll" /&gt;&#xD;
+&lt;/AssemblyExplorer&gt;</s:String></wpf:ResourceDictionary>

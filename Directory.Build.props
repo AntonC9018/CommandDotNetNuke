@@ -1,0 +1,7 @@
+<Project>
+    <PropertyGroup>
+        <ProjectRootDirectory Condition="'$(RootDirectory)'!=''">$(RootDirectory)</ProjectRootDirectory>
+        <ProjectRootDirectory Condition="'$(RootDirectory)'==''">$(SolutionDir)</ProjectRootDirectory>
+        <ProjectRootDirectory Condition="!HasTrailingSlash('$(ProjectRootDirectory)')">$(ProjectRootDirectory)\</ProjectRootDirectory>
+    </PropertyGroup>
+</Project>
